@@ -1,5 +1,7 @@
 # FreeSWITCH event socket connection pool
 
+> author:  easycallcenter365@126.com
+
 ## About Event Socket 
 
  Event Socket is a communication protocol provided by FreeSWITCH that offers a mechanism

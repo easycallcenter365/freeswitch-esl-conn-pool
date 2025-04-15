@@ -1,6 +1,6 @@
 ## 基于Java Netty实现Event Socket连接池 {#fs-conn-pool-based-on-netty}
 
-> mysmurfs0927@gmail.com / 2023-12-30
+> author:  easycallcenter365@126.com
 
 ### 背景及概述
 
