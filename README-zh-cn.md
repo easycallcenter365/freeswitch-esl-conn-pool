@@ -1,4 +1,4 @@
-## 基于Java Netty实现Event Socket连接池 {#fs-conn-pool-based-on-netty}
+## 基于Java实现FreeSWITCH Event Socket连接池 
 
 > author:  easycallcenter365@126.com
 
