@@ -47,9 +47,45 @@ Event Socket协议是基于 TCP 的应用层文本协议，可以使用纯文本
 连接池： 一个全局连接池，内部存储了10个连接对象。每当有通话线程需要向 FreeSWITCH 发送指令的时候，就从连接池借用一个连接对象，发送完指令并获取到响应后，立即把连接归还到连接池。连接池中的连接对象，不订阅任何消息，仅用作发送指令。
 ```
 
+### 致谢
+
+感谢这个开源项目 https://github.com/zhouhailin/freeswitch-externals ，本项目基于它做了Event Socket连接池的实现。
+
 ### 使用方法
 
-定义一个listenter:
+首先初始化连接池：
+
+```java
+   List<String> eventSubscriptions = new ArrayList<>();
+        eventSubscriptions.add(EventNames.CHANNEL_HANGUP);
+        eventSubscriptions.add(EventNames.CHANNEL_ANSWER);
+        eventSubscriptions.add(EventNames.CHANNEL_PROGRESS_MEDIA);
+        eventSubscriptions.add(EventNames.HEARTBEAT);
+        eventSubscriptions.add(EventNames.BACKGROUND_JOB);
+        eventSubscriptions.add(EventNames.DETECTED_SPEECH);
+        eventSubscriptions.add(EventNames.CHANNEL_PARK);
+        eventSubscriptions.add(EventNames.RECORD_START);
+        eventSubscriptions.add(EventNames.RECORD_STOP);
+        eventSubscriptions.add(EventNames.PLAYBACK_STOP);
+        eventSubscriptions.add(EventNames.PLAYBACK_START);
+        eventSubscriptions.add(EventNames.DTMF);
+        eventSubscriptions.add("CUSTOM AsrEvent");
+        eventSubscriptions.add("CUSTOM TtsEvent");
+
+        EslConnectionDetail.setEventSubscriptions(eventSubscriptions);
+        List<FreeswitchNodeInfo> nodeList = new ArrayList<>(8);
+        
+        FreeswitchNodeInfo nodeInfo = new FreeswitchNodeInfo();
+        nodeInfo.setHost("127.0.0.1");
+        nodeInfo.setPort(8021);
+        nodeInfo.setPass("ClueCon");
+        nodeInfo.setPoolSize(10);
+        nodeList.add(nodeInfo);
+        // 可以添加多个 node，这里演示仅添加了一个节点 
+        EslConnectionUtil.initConnPool(nodeList);
+```
+
+a. 定义一个listenter:
 
 ```java
   private static class CallListener implements IEslEventListener {
@@ -108,6 +144,46 @@ Event Socket协议是基于 TCP 的应用层文本协议，可以使用纯文本
     }
 ```	
 
+执行单条 `event socket` 指令:
+
+```java
+EslConnectionUtil.sendExecuteCommand(
+	 "hangup",
+	 "recvHangupSignal",
+	 uuid
+);
+```
+
+执行同步api，适用于能立即获取到返回结果的：
+
+```java
+EslMessage apiResponseMsg = EslConnectionUtil.sendSyncApiCommand(
+	"uuid_exists",
+	uuid
+);
+```
+
+
+对于比较耗时的操作，比如 originate 命令， 建议使用异步api，通过回调获取结果：
+
+```java
+EslConnectionPool eslConnectionPool = EslConnectionUtil.getEslConnectionPool("127.0.0.1", 8021);
+String uuid =  UUID.randomUUID().toString();
+StringBuilder callPrefix = new StringBuilder();
+callPrefix.append(String.format(
+		"hangup_after_bridge=true,origination_uuid=%s,absolute_codec_string=pcma,ignore_early_media=false,",
+		uuid
+));
+String callParameter = String.format("{%s}sofia/gateway/%s/15005600327  &park()",
+		callPrefix.toString(),
+		"mygateway"
+);
+IEslEventListener eslListener  = new CallListener("", uuid);
+String response = EslConnectionUtil.sendAsyncApiCommand("originate", callParameter);
+if(!StringUtils.isEmpty(response)){
+	eslConnectionPool.getDefaultEslConn().addListener(response, eslListener);
+}
+```
 
 
 

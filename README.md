@@ -96,9 +96,45 @@
  the connection is immediately returned to the pool. The connection objects in the pool do not subscribe to any messages and
  are only used for sending commands.
  
+### Acknowledgments
+
+Thanks for this open source project https://github.com/zhouhailin/freeswitch-externals . Our project based on it to do the Event Socket connection pool implementation. 
+ 
 ## Usage
 
-Define a listenter:
+First initialize the event socket connection pool:
+
+```java
+   List<String> eventSubscriptions = new ArrayList<>();
+        eventSubscriptions.add(EventNames.CHANNEL_HANGUP);
+        eventSubscriptions.add(EventNames.CHANNEL_ANSWER);
+        eventSubscriptions.add(EventNames.CHANNEL_PROGRESS_MEDIA);
+        eventSubscriptions.add(EventNames.HEARTBEAT);
+        eventSubscriptions.add(EventNames.BACKGROUND_JOB);
+        eventSubscriptions.add(EventNames.DETECTED_SPEECH);
+        eventSubscriptions.add(EventNames.CHANNEL_PARK);
+        eventSubscriptions.add(EventNames.RECORD_START);
+        eventSubscriptions.add(EventNames.RECORD_STOP);
+        eventSubscriptions.add(EventNames.PLAYBACK_STOP);
+        eventSubscriptions.add(EventNames.PLAYBACK_START);
+        eventSubscriptions.add(EventNames.DTMF);
+        eventSubscriptions.add("CUSTOM AsrEvent");
+        eventSubscriptions.add("CUSTOM TtsEvent");
+
+        EslConnectionDetail.setEventSubscriptions(eventSubscriptions);
+        List<FreeswitchNodeInfo> nodeList = new ArrayList<>(8);
+        
+        FreeswitchNodeInfo nodeInfo = new FreeswitchNodeInfo();
+        nodeInfo.setHost("127.0.0.1");
+        nodeInfo.setPort(8021);
+        nodeInfo.setPass("ClueCon");
+        nodeInfo.setPoolSize(10);
+        nodeList.add(nodeInfo);
+        // Multiple nodes can be added, but only one node is added in this demonstration
+        EslConnectionUtil.initConnPool(nodeList);
+```
+
+a. define a listenter:
 
 ```java
   private static class CallListener implements IEslEventListener {
@@ -120,7 +156,7 @@ Define a listenter:
         @Override
         public void eventReceived(String addr, EslEvent event) {
             // call back function executes in threadPool, avoiding blocking FreeSWITCH esl worker thread.
-            // Time-consuming operations are executed in the thread pool
+            // Time-consuming operation, put a new thread pool;
             threadPool.execute(new Runnable() {
                 @Override
                 public void run() {
@@ -155,7 +191,49 @@ Define a listenter:
 
         }
     }
-```	 
+```	
+
+execute single `event socket` command:
+
+```java
+EslConnectionUtil.sendExecuteCommand(
+	 "hangup",
+	 "recvHangupSignal",
+	 uuid
+);
+```
+
+Execute api synchronously. It is suitable for short operations that can get the return result immediately：
+
+```java
+EslMessage apiResponseMsg = EslConnectionUtil.sendSyncApiCommand(
+	"uuid_exists",
+	uuid
+);
+```
+
+
+For time-consuming operations, such as the originate command, 
+it is recommended to use an asynchronous api and obtain the result through a callback:
+
+```java
+EslConnectionPool eslConnectionPool = EslConnectionUtil.getEslConnectionPool("127.0.0.1", 8021);
+String uuid =  UUID.randomUUID().toString();
+StringBuilder callPrefix = new StringBuilder();
+callPrefix.append(String.format(
+		"hangup_after_bridge=true,origination_uuid=%s,absolute_codec_string=pcma,ignore_early_media=false,",
+		uuid
+));
+String callParameter = String.format("{%s}sofia/gateway/%s/15005600327  &park()",
+		callPrefix.toString(),
+		"mygateway"
+);
+IEslEventListener eslListener  = new CallListener("", uuid);
+String response = EslConnectionUtil.sendAsyncApiCommand("originate", callParameter);
+if(!StringUtils.isEmpty(response)){
+	eslConnectionPool.getDefaultEslConn().addListener(response, eslListener);
+}
+```
  
  
  
