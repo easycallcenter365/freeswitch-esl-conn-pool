@@ -1,8 +1,8 @@
-# FreeSWITCH event socket connection pool
+## FreeSWITCH event socket connection pool
 
 > author:  easycallcenter365@126.com
 
-## About Event Socket 
+### About Event Socket 
 
  Event Socket is a communication protocol provided by FreeSWITCH that offers a mechanism
  for real-time event notifications and interaction with FreeSWITCH. 
@@ -29,7 +29,7 @@
  performance issues. The project introduced here implements an Event Socket protocol client
  based on the Java Netty framework.
 
-## Why a Connection Pool is Needed ？
+### Why a Connection Pool is Needed ？
 
  A connection pool is necessary for high-performance considerations. Let's recall the scenario
  in Java projects over a decade ago where we directly used the JDBC Connector to connect to MySQL databases:
@@ -50,7 +50,7 @@
  We face similar issues in the interaction between the Java client and FreeSWITCH. Additionally,
  Netty is chosen for its foundation in implementing high-performance java applications.
 
-## Challenges in Implementing a Connection Pool
+### Challenges in Implementing a Connection Pool
  
  The challenge in implementing a FreeSWITCH connection pool lies in the fact that various events in FreeSWITCH’s Event Socket
  communication are asynchronously generated. For example, after a call starts, we need to receive these event messages
@@ -64,7 +64,7 @@
  leading to resource wastage. 
 
 
-## The thoughts of  implement an esl connection pool
+### The thoughts of  implement an esl connection pool
 
  In a call, we may have the following requirements and characteristics:
  
@@ -104,7 +104,7 @@
 
 Thanks for this open source project https://github.com/zhouhailin/freeswitch-externals . Our project based on it to do the Event Socket connection pool implementation. 
  
-## Usage
+### Usage
 
 First initialize the event socket connection pool:
 
