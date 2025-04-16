@@ -8,8 +8,10 @@
  for real-time event notifications and interaction with FreeSWITCH. 
  Event Socket operates in two modes, Inbound and Outbound, distinguished as follows:
 
+```txt
  Inbound Mode:    FreeSWITCH is the server  <=>  External application is the client
  Outbound Mode:   FreeSWITCH is the client  <=>  External application is the server
+``` 
  
  Through extensive work experience, the author believes that Inbound mode is more user-friendly
  and relatively easier to program. Since all application scenarios can be addressed using Inbound mode,
@@ -32,9 +34,11 @@
  A connection pool is necessary for high-performance considerations. Let's recall the scenario
  in Java projects over a decade ago where we directly used the JDBC Connector to connect to MySQL databases:
 
+```txt
  Request comes -> Establish database connection -> Send query or modification request -> Get response -> Close connection
+```
+
  Establishing and closing database connections are time-consuming operations, especially under high concurrency.
- 
  Using a connection pool allows database connections to be created in advance and maintained in the pool,
  rather than creating a new connection each time the database needs to be accessed.
  This reduces the number of connection creations and closures, thereby improving performance.
