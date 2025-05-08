@@ -1,9 +1,9 @@
-package com.easycallcenter365.fs.esl;
+package link.thingscloud.freeswitch.esl;
 
 import com.alibaba.fastjson.JSON;
-import com.easycallcenter365.fs.esl.transport.CommandResponse;
-import com.easycallcenter365.fs.esl.transport.message.EslMessage;
-import com.easycallcenter365.fs.esl.util.CurrentTimeMillisClock;
+import link.thingscloud.freeswitch.esl.inbound.handler.InboundChannelHandler;
+import link.thingscloud.freeswitch.esl.transport.CommandResponse;
+import link.thingscloud.freeswitch.esl.transport.message.EslMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -21,7 +21,11 @@ public class EslConnectionUtil  {
 
     protected static final Logger logger = LoggerFactory.getLogger(EslConnectionUtil.class);
 
-    private static  final ConcurrentHashMap<String, com.easycallcenter365.fs.esl.EslConnectionPool> eslConnectionPools = new ConcurrentHashMap<>(200);
+    private static  final ConcurrentHashMap<String, EslConnectionPool> eslConnectionPools = new ConcurrentHashMap<>(200);
+
+    public static void setEslExecuteTime(int timeout){
+        InboundChannelHandler.setEslExecuteTimeout(timeout);
+    }
 
     public synchronized static void initConnPool( List<FreeswitchNodeInfo> nodeList) {
         if (eslConnectionPools.size() != 0 || nodeList == null || nodeList.size() == 0) {
@@ -44,7 +48,7 @@ public class EslConnectionUtil  {
      */
     public static EslConnectionPool getDefaultEslConnectionPool(){
         if(eslConnectionPools.size() > 0) {
-            for (Map.Entry<String, com.easycallcenter365.fs.esl.EslConnectionPool> entry : eslConnectionPools.entrySet()) {
+            for (Map.Entry<String, EslConnectionPool> entry : eslConnectionPools.entrySet()) {
                 return entry.getValue();
             }
         }
@@ -57,7 +61,7 @@ public class EslConnectionUtil  {
      * @param port
      * @return
      */
-    public static com.easycallcenter365.fs.esl.EslConnectionPool getEslConnectionPool(String host, int port){
+    public static EslConnectionPool getEslConnectionPool(String host, int port){
         String hostKey = String.format("%s:%d", host, port);
         return eslConnectionPools.get(hostKey);
     }
@@ -68,18 +72,18 @@ public class EslConnectionUtil  {
      * @param nodeInfo
      * @return
      */
-    private static com.easycallcenter365.fs.esl.EslConnectionPool createEslConnectionPool(FreeswitchNodeInfo nodeInfo){
+    private static EslConnectionPool createEslConnectionPool(FreeswitchNodeInfo nodeInfo){
         String host = nodeInfo.getHost();
         int port = nodeInfo.getPort();
         String pass = nodeInfo.getPass();
         int poolSize = nodeInfo.getPoolSize();
         String hostKey = String.format("%s:%d", host, port);
-        com.easycallcenter365.fs.esl.EslConnectionPool connectionPool = eslConnectionPools.get(hostKey);
+       EslConnectionPool connectionPool = eslConnectionPools.get(hostKey);
         if(null == connectionPool) {
             synchronized (hostKey.intern()) {
                 connectionPool = eslConnectionPools.get(hostKey);
                 if (null == connectionPool) {
-                     connectionPool =  com.easycallcenter365.fs.esl.EslConnectionPool.createPool(poolSize, host, port , pass);
+                     connectionPool =  EslConnectionPool.createPool(poolSize, host, port , pass);
                     eslConnectionPools.put(hostKey,  connectionPool);
                 }
             }
@@ -107,7 +111,7 @@ public class EslConnectionUtil  {
      * @param uuid
      * @param eslConnectionPool
      */
-    public static  String sendExecuteCommand(String app, String param, String uuid, com.easycallcenter365.fs.esl.EslConnectionPool eslConnectionPool){
+    public static  String sendExecuteCommand(String app, String param, String uuid, EslConnectionPool eslConnectionPool){
         long startTime = System.currentTimeMillis();
         String traceId = uuid;
         EslConnectionDetail connection = eslConnectionPool.getConnection();
@@ -156,7 +160,7 @@ public class EslConnectionUtil  {
      * @param eslConnectionPool
      * @return
      */
-    public static  String sendAsyncApiCommand(String api, String param, com.easycallcenter365.fs.esl.EslConnectionPool eslConnectionPool){
+    public static  String sendAsyncApiCommand(String api, String param, EslConnectionPool eslConnectionPool){
         long startTime = System.currentTimeMillis();
         String traceId = param;
         String spacer = " ";
@@ -193,7 +197,7 @@ public class EslConnectionUtil  {
      * @param param
      * @return
      */
-    public static  EslMessage sendSyncApiCommand(String api, String param){
+    public static EslMessage sendSyncApiCommand(String api, String param){
         if(eslConnectionPools.size() > 0) {
             return sendSyncApiCommand(api, param, getDefaultEslConnectionPool());
         }

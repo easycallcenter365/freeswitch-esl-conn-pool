@@ -1,9 +1,10 @@
-package com.easycallcenter365.fs.esl;
+package link.thingscloud.freeswitch.esl;
 
-import com.easycallcenter365.fs.esl.inbound.NettyInboundClient;
-import com.easycallcenter365.fs.esl.inbound.option.ConnectState;
-import com.easycallcenter365.fs.esl.inbound.option.InboundClientOption;
-import com.easycallcenter365.fs.esl.inbound.option.ServerOption;
+
+import link.thingscloud.freeswitch.esl.inbound.NettyInboundClient;
+import link.thingscloud.freeswitch.esl.inbound.option.ConnectState;
+import link.thingscloud.freeswitch.esl.inbound.option.InboundClientOption;
+import link.thingscloud.freeswitch.esl.inbound.option.ServerOption;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

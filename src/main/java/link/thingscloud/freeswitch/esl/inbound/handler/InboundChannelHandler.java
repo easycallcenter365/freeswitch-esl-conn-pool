@@ -38,7 +38,6 @@ public class InboundChannelHandler extends SimpleChannelInboundHandler<EslMessag
 
     private static final String MESSAGE_TERMINATOR = "\n\n";
     private static final String LINE_TERMINATOR = "\n";
-
     private final Lock syncLock = new ReentrantLock();
     private final Queue<SyncCallback> syncCallbacks = new ConcurrentLinkedQueue<>();
     private final ChannelEventListener listener;
@@ -47,8 +46,15 @@ public class InboundChannelHandler extends SimpleChannelInboundHandler<EslMessag
     private Channel channel;
     private String remoteAddr;
     private String objectUuid = UUID.randomUUID().toString();
-
     private final boolean isTraceEnabled = log.isTraceEnabled();
+
+    private static int eslExecuteTimeout = 2100;
+    public static void setEslExecuteTimeout(int timeout){
+        if(timeout > eslExecuteTimeout) {
+            eslExecuteTimeout = timeout;
+            log.info("InboundChannelHandler eslExecuteTimeout is set to: {}.", eslExecuteTimeout);
+        }
+    }
 
     /**
      * <p>Constructor for InboundChannelHandler.</p>
@@ -274,7 +280,7 @@ public class InboundChannelHandler extends SimpleChannelInboundHandler<EslMessag
             this.command = command;
             try {
                 log.trace("awaiting latch ... ");
-                latch.await(2100, TimeUnit.MILLISECONDS);
+                latch.await(eslExecuteTimeout, TimeUnit.MILLISECONDS);
             } catch (InterruptedException e) {
                 //throw new RuntimeException(e);
             }
