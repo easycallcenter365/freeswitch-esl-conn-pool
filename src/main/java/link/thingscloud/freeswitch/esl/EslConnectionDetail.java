@@ -137,6 +137,15 @@ public class EslConnectionDetail  implements IEslEventListener {
         LISTENTERS.remove(uuid);
     }
 
+    private static String[] subscriberKeyList = {
+            "-acd",
+            "-batchcall",
+            "-robot",
+            "-ex",
+            "-ex1",
+            "-ex2"
+    };
+
     /**
      *  获取真正的esl的socket连接对象;
      * @return
@@ -175,12 +184,15 @@ public class EslConnectionDetail  implements IEslEventListener {
                     uuid, event.toString());
         }
 
-        // 解决同一个uuid注册多个监听器的问题; 增加一个扩展;
-        String uuidEx = uuid + "-ex";
-        msgHandle = LISTENTERS.get(uuidEx);
-        if(null != msgHandle){
-            msgHandle.eventReceived(addr, event);
+        // 解决同一个uuid注册多个监听器的问题; 增加多个扩展;
+        for (String key : subscriberKeyList) {
+            String uuidEx = uuid + key;
+            msgHandle = LISTENTERS.get(uuidEx);
+            if(null != msgHandle){
+                msgHandle.eventReceived(addr, event);
+            }
         }
+
 
         // 如果是挂机，则自动移除listener对象;
         if(EventNames.CHANNEL_HANGUP.equalsIgnoreCase(eventName)){
