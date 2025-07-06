@@ -27,8 +27,9 @@ public class EslConnectionDetail  implements IEslEventListener {
     private ServerOption serverOption  = null;
     private InboundClient conn  = null;
     private  final static ConcurrentHashMap<String, IEslEventListener> LISTENTERS = new ConcurrentHashMap<>(3000);
+    private  final static ConcurrentHashMap<String, IEslEventListener> DEFAULTLISTENERS = new ConcurrentHashMap<>(3000);
     private  final static ConcurrentHashMap<String, DelayCallInfo> DELAY_REMOVE_CALLINFO_LIST = new ConcurrentHashMap<>(3000);
-    private   IEslEventListener defaultListener = null;
+
     private static List<String> eventSubscriptions = new ArrayList<>();
     private LinkedBlockingQueue<DelayEventInfo> delayEventInfoList;
     /**
@@ -130,7 +131,7 @@ public class EslConnectionDetail  implements IEslEventListener {
      * @param listener
      */
     public void addDefaultListener( IEslEventListener listener){
-        defaultListener = listener;
+        DEFAULTLISTENERS.put(UuidGenerator.getOneUuid(), listener);
     }
 
     public  void removeListener(String uuid) {
@@ -152,6 +153,15 @@ public class EslConnectionDetail  implements IEslEventListener {
      */
     public InboundClient getRealConn(){
         return  conn;
+    }
+
+    private static void notifyAllDefaultListeners(String addr, EslEvent event){
+        Iterator<Map.Entry<String, IEslEventListener>> it = DEFAULTLISTENERS.entrySet().iterator();
+        while(it.hasNext()){
+            Map.Entry<String, IEslEventListener> entry = it.next();
+            IEslEventListener listener = entry.getValue();
+            listener.eventReceived(addr, event);
+        }
     }
 
     @Override
@@ -176,6 +186,11 @@ public class EslConnectionDetail  implements IEslEventListener {
             return;
         }
         logger.info("eventReceived:{}, uuid:{}", event.getEventName(), uuid);
+        if(null == uuid){
+            notifyAllDefaultListeners(addr, event);
+            return;
+        }
+
         IEslEventListener msgHandle = LISTENTERS.get(uuid);
         if(null != msgHandle){
             msgHandle.eventReceived(addr, event);
@@ -199,9 +214,7 @@ public class EslConnectionDetail  implements IEslEventListener {
             DELAY_REMOVE_CALLINFO_LIST.put(uuid, new DelayCallInfo(uuid));
         }
 
-        if(null != defaultListener) {
-            defaultListener.eventReceived(addr, event);
-        }
+        notifyAllDefaultListeners(addr, event);
     }
 
     @Override
@@ -216,9 +229,7 @@ public class EslConnectionDetail  implements IEslEventListener {
                     jobUuid, event.toString());
             delayEventInfoList.add(new DelayEventInfo(event, System.currentTimeMillis(), jobUuid));
         }
-        if(null != defaultListener) {
-            defaultListener.backgroundJobResultReceived(addr, event);
-        }
+        notifyAllDefaultListeners(addr, event);
     }
 
     public Long getLastBeatTime() {

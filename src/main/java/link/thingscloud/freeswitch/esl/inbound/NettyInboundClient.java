@@ -129,6 +129,7 @@ public class NettyInboundClient extends AbstractInboundClient {
             sb.append(' ');
             sb.append(events);
         }
+        log.info("setEventSubscriptions: " + sb.toString());
         EslMessage response = handler.sendSyncSingleLineCommand(sb.toString());
         return new CommandResponse(sb.toString(), response);
     }
